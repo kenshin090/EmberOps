@@ -1,0 +1,142 @@
+services:
+  # --------- Infrastructure ----------
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: emberops-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "admin123!"
+    ports:
+      - "1434:1433"
+    volumes:
+      - emberops_sql_data:/var/opt/mssql
+   
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: emberops-rabbit
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  # --------- Services ----------
+  apigateway:
+    build:
+      context: .
+      dockerfile: EmberOps.ApiGateway/Dockerfile
+    container_name: emberops-gateway
+    depends_on:              
+      rabbitmq:
+        condition: service_healthy
+      sqlserver:
+        condition: service_started
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+
+      # Service discovery (internal docker network)
+      Services__Auth: "http://authservice:8080"
+      Services__Orders: "http://orderservice:8080"
+      Services__Payments: "http://paymentservice:8080"
+      Services__Inventory: "http://inventoryservice:8080"
+
+      # Rabbit config (if gateway consumes/publishes events)
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__Port: "5672"
+      RabbitMQ__User: "guest"
+      RabbitMQ__Pass: "guest"
+    ports:
+      - "8080:8080"
+
+  authservice:
+    build:
+      context: .
+      dockerfile: EmberOps.AuthService/Dockerfile
+    container_name: emberops-auth
+    depends_on:
+      sqlserver:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__AuthDb: "Server=sqlserver,1433;Database=EmberOps.Auth;User Id=sa;Password=admin123!;TrustServerCertificate=True"
+
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__Port: "5672"
+      RabbitMQ__User: "guest"
+      RabbitMQ__Pass: "guest"
+    ports:
+      - "8081:8080"
+
+  orderservice:
+    build:
+      context: .
+      dockerfile: EmberOps.OrderService/Dockerfile
+    container_name: emberops-orders
+    depends_on:
+      sqlserver:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__OrderDb: "Server=sqlserver,1433;Database=EmberOps.Orders;User Id=sa;Password=admin123!;TrustServerCertificate=True"
+
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__Port: "5672"
+      RabbitMQ__User: "guest"
+      RabbitMQ__Pass: "guest"
+    ports:
+      - "8082:8080"
+
+  paymentservice:
+    build:
+      context: .
+      dockerfile: EmberOps.PaymentsService/Dockerfile
+    container_name: emberops-payments
+    depends_on:
+      sqlserver:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__PaymentsDb: "Server=sqlserver,1433;Database=EmberOps.Payments;User Id=sa;Password=admin123!;TrustServerCertificate=True"
+
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__Port: "5672"
+      RabbitMQ__User: "guest"
+      RabbitMQ__Pass: "guest"
+    ports:
+      - "8083:8080"
+
+  inventoryservice:
+    build:
+      context: .
+      dockerfile: EmberOps.InventoryService/Dockerfile
+    container_name: emberops-inventory
+    depends_on:
+      sqlserver:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__InventoryDb: "Server=sqlserver,1433;Database=EmberOps.Inventory;User Id=sa;Password=admin123!;TrustServerCertificate=True"
+
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__Port: "5672"
+      RabbitMQ__User: "guest"
+      RabbitMQ__Pass: "guest"
+    ports:
+      - "8084:8080"
+
+volumes:
+  emberops_sql_data:

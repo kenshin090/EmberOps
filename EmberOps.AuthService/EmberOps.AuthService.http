@@ -1,0 +1,6 @@
+@EmberOps.AuthService_HostAddress = http://localhost:5039
+
+GET {{EmberOps.AuthService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

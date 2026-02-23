@@ -1,0 +1,6 @@
+@EmberOps.PaymentsService_HostAddress = http://localhost:5089
+
+GET {{EmberOps.PaymentsService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
