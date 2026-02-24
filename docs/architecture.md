@@ -4,34 +4,45 @@ This file contains a Mermaid diagram representing the high-level architecture of
 
 ```mermaid
 flowchart LR
+
+  %% Clients
   subgraph Clients
-    A[Web / Mobile Client]
+    Client[Web / Mobile Client]
   end
 
-  A -->|HTTP / WebSocket| API[Api Gateway (BFF)<br/>- REST endpoints<br/>- SignalR Hubs]
+  Client -->|HTTP / WebSocket| API["Api Gateway (BFF)<br/>- REST endpoints<br/>- SignalR Hubs"]
 
+  %% Read model hosted by API/BFF
   subgraph API_Read
-    API -->|Read queries| BFFDB[BffDbContext (Read DB)]
-    API -->|SignalR notifications| ClientApp[Web / Mobile Client]
+    API -->|Read queries| BFFDB["BffDbContext (Read DB)"]
   end
 
-  API -->|Commands / Requests| OrderService[Order Service<br/>- Domain (Order, OrderItem)<br/>- Command handlers]
+  %% Commands to Order Service
+  API -->|Commands / Requests| OrderService["Order Service<br/>- Domain (Order, OrderItem)<br/>- Command handlers"]
+
   OrderService -->|Writes| OrderDB[(Order SQL DB)]
   OrderService -->|Publish events| Bus[(RabbitMQ / MassTransit)]
 
-  subgraph Consumers
-    API -->|Consume: OrderCreated| OrderCreatedProjectionConsumer[OrderCreatedProjectionConsumer]
-    API -->|Consume: OrderCreated| OrderCreatedNotificationConsumer[OrderCreatedNotificationConsumer]
+  %% Consumers (should consume from the Bus, not from API)
+  subgraph API_Consumers
+    Bus -->|OrderCreated| OrderCreatedProjectionConsumer[OrderCreatedProjectionConsumer]
+    Bus -->|OrderCreated| OrderCreatedNotificationConsumer[OrderCreatedNotificationConsumer]
   end
 
+  OrderCreatedProjectionConsumer -->|Updates read model| BFFDB
+  OrderCreatedNotificationConsumer -->|Notify via SignalR| API
+
+  %% Other services
   Bus --> Inventory[Inventory Service]
   Bus --> Payments[Payments Service]
   Bus --> Auth[Auth Service]
 
+  %% Shared
   Contracts[Contracts / DTOs] -->|Shared schema| Bus
   BuildingBlocks[BuildingBlocks<br/>Logging, Persistence Helpers] --> OrderService
   BuildingBlocks --> API
 
+  %% Orchestration
   subgraph Orchestration
     DockerCompose[(docker-compose)]
     DockerCompose --> Bus
@@ -40,6 +51,7 @@ flowchart LR
     DockerCompose --> OrderService
     DockerCompose --> Inventory
     DockerCompose --> Payments
+    DockerCompose --> Auth
   end
 
   style API fill:#f9f,stroke:#333,stroke-width:1px
