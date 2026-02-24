@@ -1,6 +1,18 @@
+using EmberOps.ApiGateway.Features.Orders;
 using EmberOps.ApiGateway.Hubs;
+using EmberOps.ApiGateway.Infrastructure.Messaging;
+using EmberOps.ApiGateway.Infrastructure.Persistance;
+using EmberOps.BuildingBlocks.Extensions;
+using EmberOps.BuildingBlocks.Logging;
+using EmberOps.Infrastructure.ServiceBus.RabbitMQ.Messaging;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//Serilog
+builder.Host.UseSerilog();
+builder.Host.ConfigureSerilog("ApiGatewayLogs");
 
 // Add services to the container.
 
@@ -15,7 +27,31 @@ builder.Services.AddSwaggerGen();
 // SignalR
 builder.Services.AddSignalR();
 
+// Service Bus subscriptions
+builder.Services.AddMessageBus(builder.Configuration, new[]
+{
+    new EndpointConsumers("apigateway-order-events:orderCreated", typeof(OrderCreatedNotificationConsumer)),
+    new EndpointConsumers("apigateway-order-events:orderCreatedProjection", typeof(OrderCreatedProjectionConsumer)),
+});
+
+builder.Services.AddDbContext<BffDbContext>(options =>
+{
+    var cs = builder.Configuration.GetConnectionString("AppConnection");
+    options.UseSqlServer(cs);
+});
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<BffDbContext>();
+
+    dbContext.Database.Migrate();
+}
+
+app.UseSerilogRequestLogging();
+
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -33,10 +69,8 @@ app.MapPost("/api/auth/logOut", () => { Results.Ok("deslogeado"); });
 app.MapPost("/api/auth/signIn", () => { Results.Ok("deslogeado"); });
 
 //Services for orders
-app.MapGet("/api/orders", () => { Results.Ok("retorno las ordenes"); });
-app.MapGet("/api/orders/dashborad", () => { Results.Ok("retorno ordenes completadas vs pendientes"); });
-app.MapPost("/api/orders", () => { Results.Ok("aqui creo una orden"); });
-app.MapPost("/api/orders/cancel", () => { Results.Ok("aqui cancelo una orden"); });
+app.MapOrderEndpoints();
+
 
 //Services for payment
 app.MapPost("/api/payment", () => { Results.Ok("aqui pago una orden"); });

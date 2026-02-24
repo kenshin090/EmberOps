@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Infrastructure/">
+    <Project Path="EmberOps.Infrastructure.ServiceBus.RabbitMQ/EmberOps.Infrastructure.ServiceBus.RabbitMQ.csproj" Id="01e5b943-fe81-4644-9663-1a2923d55ceb" />
+  </Folder>
   <Folder Name="/Microservices/">
     <Project Path="EmberOps.AuthService/EmberOps.AuthService.csproj" Id="59498499-2ab6-42cf-b2cf-afd1903b0ddd" />
     <Project Path="EmberOps.InventoryService/EmberOps.InventoryService.csproj" Id="a110699b-5215-4a39-b96e-5a95f0489866" />
@@ -8,7 +11,11 @@
   <Folder Name="/Solution Items/">
     <File Path="docker-compose.yml" />
   </Folder>
-  <Folder Name="/Tests/" />
+  <Folder Name="/Tests/">
+    <Project Path="EmberOps.OrderService.Tests/EmberOps.OrderService.Tests.csproj" Id="f7920076-0083-434b-b36a-505b13051290" />
+  </Folder>
   <Project Path="EmberOps.ApiGateway/EmberOps.ApiGateway.csproj" />
   <Project Path="EmberOps.BuildingBlocks.Persistance/EmberOps.BuildingBlocks.Persistance.SqlServer.csproj" Id="3a30c1e3-e3c6-4872-8486-1623158a84d4" />
+  <Project Path="EmberOps.BuildingBlocks/EmberOps.BuildingBlocks.csproj" Id="4b2a92ad-3b35-4c03-9820-3d2b84a8dc55" />
+  <Project Path="EmberOps.Contracts/EmberOps.Contracts.csproj" Id="2ee60d3f-dfdf-451e-a0e6-adf140bdf4da" />
 </Solution>

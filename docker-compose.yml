@@ -40,6 +40,7 @@ services:
     environment:
       ASPNETCORE_URLS: "http://+:8080"
 
+
       # Service discovery (internal docker network)
       Services__Auth: "http://authservice:8080"
       Services__Orders: "http://orderservice:8080"
@@ -53,6 +54,10 @@ services:
       RabbitMQ__Pass: "guest"
     ports:
       - "8080:8080"
+    volumes:
+      - ./logs/ApiGatewayLogs:/app/ApiGatewayLogs
+    links:
+      - sqlserver
 
   authservice:
     build:
@@ -74,6 +79,10 @@ services:
       RabbitMQ__Pass: "guest"
     ports:
       - "8081:8080"
+    volumes:
+      - ./logs/authService:/app/logs
+    links:
+      - sqlserver
 
   orderservice:
     build:
@@ -95,6 +104,10 @@ services:
       RabbitMQ__Pass: "guest"
     ports:
       - "8082:8080"
+    volumes:
+      - ./logs/orderServiceLogs:/app/OrderServiceLogs
+    links:
+      - sqlserver
 
   paymentservice:
     build:
@@ -116,6 +129,8 @@ services:
       RabbitMQ__Pass: "guest"
     ports:
       - "8083:8080"
+    links:
+      - sqlserver
 
   inventoryservice:
     build:
@@ -137,6 +152,9 @@ services:
       RabbitMQ__Pass: "guest"
     ports:
       - "8084:8080"
-
+    volumes:
+      - ./logs/inventoryService:/app/logs
+    links:
+      - sqlserver
 volumes:
   emberops_sql_data:

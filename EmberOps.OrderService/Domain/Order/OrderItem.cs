@@ -6,18 +6,18 @@ namespace EmberOps.OrderService.Domain.Order
     {
         public Guid Id { get; private set; }
         public Guid OrderId { get; private set; }
-        public Guid ProductId { get; private set; }
+        public string Sku { get; private set; }
         public string NameSnapshot { get; private set; } = default!;
         public decimal UnitPriceSnapshot { get; private set; }
         public int Quantity { get; private set; }
 
         private OrderItem() { } // EF Core
 
-        internal OrderItem(Guid id, Guid orderId, Guid productId, string nameSnapshot, decimal unitPriceSnapshot, int quantity)
+        internal OrderItem(Guid id, Guid orderId, string productId, string nameSnapshot, decimal unitPriceSnapshot, int quantity)
         {
             Id = id;
             OrderId = orderId;
-            ProductId = productId;
+            Sku = productId;
             NameSnapshot = nameSnapshot;
             UnitPriceSnapshot = unitPriceSnapshot;
             Quantity = quantity;

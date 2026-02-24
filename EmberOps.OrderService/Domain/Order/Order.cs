@@ -9,47 +9,42 @@ namespace EmberOps.OrderService.Domain.Order
         private readonly List<OrderItem> _items = new();
 
         public Guid Id { get; private set; }
-        public string TenantId { get; private set; } = default!;
         public OrderStatus Status { get; private set; } = OrderStatus.Draft;
 
         public decimal TotalAmount { get; private set; }
         public DateTime CreatedAtUtc { get; private set; }
         public DateTime? SubmittedAtUtc { get; private set; }
         public DateTime? PaidAtUtc { get; private set; }
-
-        // Exposición read-only: afuera NO puede mutar
+        
         public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
 
         private Order() { } // EF Core
 
-        public Order(Guid id, string tenantId, DateTime createdAtUtc)
+        public Order(Guid id,  DateTime createdAtUtc)
         {
             if (id == Guid.Empty) throw new DomainException("Order id is required.");
-            if (string.IsNullOrWhiteSpace(tenantId)) throw new DomainException("TenantId is required.");
-
-            Id = id;
-            TenantId = tenantId;
+            Id = id;            
             CreatedAtUtc = createdAtUtc;
             Status = OrderStatus.Draft;
         }
 
-        public void AddItem(Guid productId, string nameSnapshot, decimal unitPriceSnapshot, int quantity)
+        public void AddItem(string sku, string nameSnapshot, decimal unitPriceSnapshot, int quantity)
         {
             EnsureEditable();
 
-            if (productId == Guid.Empty) throw new DomainException("ProductId is required.");
+            if (sku == string.Empty) throw new DomainException("Sku is required.");
             if (string.IsNullOrWhiteSpace(nameSnapshot)) throw new DomainException("Product name is required.");
             if (unitPriceSnapshot <= 0) throw new DomainException("Unit price must be > 0.");
             if (quantity <= 0) throw new DomainException("Quantity must be > 0.");
                         
-            var existing = _items.FirstOrDefault(x => x.ProductId == productId);
+            var existing = _items.FirstOrDefault(x => x.Sku == sku);
             if (existing is not null)
             {
                 existing.IncreaseQuantity(quantity);
             }
             else
             {
-                _items.Add(new OrderItem(Guid.NewGuid(), Id, productId, nameSnapshot, unitPriceSnapshot, quantity));
+                _items.Add(new OrderItem(Guid.NewGuid(), Id, sku, nameSnapshot, unitPriceSnapshot, quantity));
             }
 
             RecalculateTotal();
@@ -104,7 +99,7 @@ namespace EmberOps.OrderService.Domain.Order
                 throw new DomainException("Paid orders cannot be cancelled.");
 
             Status = OrderStatus.Cancelled;
-            // podrías guardar reason en una propiedad si quieres
+          
         }
 
         private void EnsureEditable()
