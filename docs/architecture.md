@@ -8,20 +8,20 @@ flowchart LR
     A[Web / Mobile Client]
   end
 
-  A -->|HTTP / WebSocket| API[Api Gateway (BFF)\n- REST endpoints\n- SignalR Hubs]
+  A -->|HTTP / WebSocket| API[Api Gateway (BFF)<br/>- REST endpoints<br/>- SignalR Hubs]
 
   subgraph API_Read
     API -->|Read queries| BFFDB[BffDbContext (Read DB)]
-    API -->|SignalR notifications| Clients[Web / Mobile Client]
+    API -->|SignalR notifications| ClientApp[Web / Mobile Client]
   end
 
-  API -->|Commands / Requests| OrderService[Order Service\n- Domain (Order, OrderItem)\n- Command handlers]
+  API -->|Commands / Requests| OrderService[Order Service<br/>- Domain (Order, OrderItem)<br/>- Command handlers]
   OrderService -->|Writes| OrderDB[(Order SQL DB)]
   OrderService -->|Publish events| Bus[(RabbitMQ / MassTransit)]
 
   subgraph Consumers
-    API -->|Consume: OrderCreated| OrderCreatedProjectionConsumer
-    API -->|Consume: OrderCreated| OrderCreatedNotificationConsumer
+    API -->|Consume: OrderCreated| OrderCreatedProjectionConsumer[OrderCreatedProjectionConsumer]
+    API -->|Consume: OrderCreated| OrderCreatedNotificationConsumer[OrderCreatedNotificationConsumer]
   end
 
   Bus --> Inventory[Inventory Service]
@@ -29,7 +29,7 @@ flowchart LR
   Bus --> Auth[Auth Service]
 
   Contracts[Contracts / DTOs] -->|Shared schema| Bus
-  BuildingBlocks[BuildingBlocks\nLogging, Persistence Helpers] --> OrderService
+  BuildingBlocks[BuildingBlocks<br/>Logging, Persistence Helpers] --> OrderService
   BuildingBlocks --> API
 
   subgraph Orchestration
