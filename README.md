@@ -88,3 +88,5 @@ This repository follows the license included with the project (check the reposit
 Questions or issues
 
 Open an issue in the repository with reproduction steps and logs where appropriate.
+
+The architectural diagrams design can be found in the docs folder
